@@ -569,18 +569,27 @@ class Postprocess:
     def _unit_df(self, units, index):
         """Transforms the units to a series
 
-        :param units: units string
+        :param units: units string, or Series/DataFrame with matching index
         :param index: index of the target dataframe
         :return: pd.Series of the units
         """
         if units is not None:
             if isinstance(units, str):
                 return pd.Series(units, index=index)
-            elif len(units) == len(index):
+            else:
+                # Convert DataFrame to Series if needed
+                if isinstance(units, pd.DataFrame):
+                    units = units.squeeze()  # Convert single-column DataFrame to Series
+
+                # Align units with index
+                units = units.reindex(index)
+
+                # Optional: Fill missing values with 'unknown' or a default
+                units.fillna("unknown", inplace=True)
+
+                assert len(units) == len(index), "The length of the units does not match the length of the index"
                 units.index.names = index.names
                 return units
-            else:
-                raise AssertionError("The length of the units does not match the length of the index")
         else:
             return None
 
